@@ -1,20 +1,18 @@
 let React = require('react');
 
-window.requestAnimationFrame =  window.requestAnimationFrame ||
-                  window.mozRequestAnimationFrame ||
-                  window.webkitRequestAnimationFrame ||
-                  window.msRequestAnimationFrame;
-
 var Main = React.createClass({
   getInitialState() {
     return { 
-        width : 1280,
         viewportWidth : 0,
         viewportHeight : 0,
         centerOffset : 0,
         tiltCenterOffset : 0,
         tiltBarWidth : 0,
-        tiltBarIndicatorWidth : 0
+        tiltBarIndicatorWidth : 0,
+        latestTilt : 0,
+        pxToMoveImg : 0,
+        pxToMoveBar : 0,
+        disableTilt : false
      };
   },
 
@@ -24,6 +22,7 @@ var Main = React.createClass({
 
   componentDidMount() {
     this.generateImgData();
+    this.addEventListeners();
   },
 
   generateViewPort() {
@@ -61,21 +60,78 @@ var Main = React.createClass({
         tiltCenterOffset : minitiltCenterOffset
     });
 
-    console.log( minitiltCenterOffset );
+    if(minicenterOffset > 0){
+      this.setState({
+          disableTilt : false
+      });
+    }
+  },
+
+  addEventListeners() {
+    if (window.DeviceOrientationEvent) {
+      console.log(this.state.disableTilt);
+      let averageGamma = [],
+          minidisableTilt = this.state.disableTilt,
+          self = this,
+          minilatestTilt;
+
+      window.addEventListener('deviceorientation', function(eventData) {
+        if (!minidisableTilt) {
+
+          if (averageGamma.length > 8) {
+            averageGamma.shift();
+          }
+
+          averageGamma.push(eventData.gamma);
+
+          minilatestTilt = averageGamma.reduce(function(a, b) { return a+b; }) / averageGamma.length;
+
+          console.log(averageGamma);
+          console.log(minilatestTilt);
+
+          self.setState({
+              latestTilt : minilatestTilt
+          });
+        }
+
+      }, false);
+      this.updatePosition();
+    }
   },
 
   updatePosition() {
+    let tilt = this.state.latestTilt,
+        maxTilt = 18,
+        minipxToMoveimg,
+        minipxToMoveBar,
+        pxToMove;
 
+    if (tilt > 0) {
+      tilt = Math.min(tilt, maxTilt);
+    } else {
+      tilt = Math.max(tilt, maxTilt * -1);
+    }
+
+    tilt = tilt * -1;
+
+    pxToMove = (tilt * this.state.centerOffset) / maxTilt;
+    minipxToMoveimg = (this.state.centerOffset + pxToMove) * -1;
+    minipxToMoveBar = (tilt * ((this.state.tiltBarWidth - this.state.tiltBarIndicatorWidth) / 2)) / maxTilt;
+
+    this.setState({
+        pxToMoveImg : minipxToMoveimg,
+        pxToMoveBar : minipxToMoveBar
+    });
   },
 
   getStyles() {
-    let x1 = 20 + 'px';
-    let x2 = 30 + 'px';
+    let x1 = Math.round(this.state.pxToMoveBar + this.state.tiltCenterOffset) + 'px';
+    let x2 = Math.round(this.state.pxToMoveImg) + 'px';
     let styles = {
 
       indicator: {
         width: this.state.tiltBarIndicatorWidth + 'px',
-        tramsform: 'translateX('+ x1 +')'
+        tramsform: 'translateX(' + x1 + ')'
       },
 
       tiltimg: {
