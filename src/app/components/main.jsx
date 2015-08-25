@@ -69,6 +69,7 @@ var Main = React.createClass({
   },
 
   addEventListeners() {
+
     if (window.DeviceOrientationEvent) {
 
       let averageGamma = [],
@@ -118,13 +119,12 @@ var Main = React.createClass({
 
     pxToMove = (tilt * this.state.centerOffset) / maxTilt;
     minipxToMoveImg = (this.state.centerOffset + pxToMove) * -1;
-    minipxToMoveBar = (tilt * ((this.state.tiltBarWidth - this.state.tiltBarIndicatorWidth) / 2)) / maxTilt;
+    minipxToMoveBar = (tilt * ((this.state.tiltBarWidth - this.state.tiltBarIndicatorWidth) / 2)) / maxTilt + this.state.tiltCenterOffset;
 
     // this.setState({
     //     pxToMoveImg : minipxToMoveimg,
     //     pxToMoveBar : minipxToMoveBar
     // });
-
     let bar = this.refs.bar.getDOMNode();
     let img = this.refs.img.getDOMNode();
     this.setTranslateX(bar, minipxToMoveBar);
